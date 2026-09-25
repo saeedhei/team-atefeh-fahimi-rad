@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: opsgenome-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opsgenome
+      POSTGRES_USER: opsgenome
+      POSTGRES_PASSWORD: opsgenome_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./api
+    container_name: opsgenome-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://opsgenome:opsgenome_dev@postgres:5432/opsgenome
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+    depends_on:
+      - postgres
+
+  web:
+    build:
+      context: ./web
+    container_name: opsgenome-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
